@@ -4,6 +4,9 @@ Reskin/Texture loader Il2Cpp BepInEx plugin for Puck
 # Vision
 Create a standardized format for reskin mods to be created by the community. Players install this plugin which loads all reskins available from their game files, and allows them to dynamically change between them from in game.
 
+# Download
+This plugin will be available through the Steam Workshop - but it is not ready yet!
+
 # To-do List
 ## Stage 1
 - Verify texture loading is possible at runtime
@@ -20,9 +23,8 @@ Create a standardized format for reskin mods to be created by the community. Pla
 - 
 
 # Creating a Reskin pack
-```json
 pack.json
-
+```json
 {
   "name": "Toaster's Reskin Pack",
   "version": "1.0.0",
