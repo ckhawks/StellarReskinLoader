@@ -1,62 +1,89 @@
-﻿using UnityEngine;
+﻿using System;
+using UnityEngine;
 
 namespace ToasterReskinLoader.swappers;
 
-public class IceSwapper
+public static class IceSwapper
 {
     private static Texture originalTexture;
 
-    public static bool SetIceTexture()
+    public static void SetIceTexture()
     {
-        ReskinRegistry.ReskinEntry reskinEntry = ReskinProfileManager.profile.ice;
+        try
+        {
+            ReskinRegistry.ReskinEntry reskinEntry = ReskinProfileManager.currentProfile.ice;
 
-        var (go, renderer, material, originalTexture2) = FindUsageOfTexture();
-        Plugin.Log($"go: {go.name}, renderer: {renderer.name}, material: {material.name}, originalTexture: {originalTexture2.name}");
+            // var (go, renderer, material, originalTexture2) = FindUsageOfTexture();
+            // Plugin.Log($"go: {go.name}, renderer: {renderer.name}, material: {material.name}, originalTexture: {originalTexture2.name}");
         
-        GameObject iceBottomGameObject = GameObject.Find("Ice Bottom");
+            GameObject iceBottomGameObject = GameObject.Find("Ice Bottom");
 
-        if (iceBottomGameObject == null)
+            if (iceBottomGameObject == null)
+            {
+                Plugin.LogError($"Could not locate Ice Bottom GameObject.");
+                return;
+            }
+        
+            MeshRenderer iceBottomMeshRenderer = iceBottomGameObject.GetComponent<MeshRenderer>();
+
+            if (iceBottomMeshRenderer == null)
+            {
+                Debug.LogError("No MeshRenderer found on GameObject Ice Bottom.");
+            }
+        
+            // string texturePropertyName = SwapperUtils.FindTextureProperty(iceBottomMeshRenderer.material);
+            // if (texturePropertyName == null)
+            // {
+            //     Plugin.LogError("No texture property found in the shader.");
+            //     return;
+            // }
+        
+            if (originalTexture == null)
+            {
+                originalTexture = iceBottomMeshRenderer.material.GetTexture("_BaseMap");
+            }
+        
+            // If setting to unchanged,
+            if (reskinEntry == null || reskinEntry.Path == null)
+            {
+                iceBottomMeshRenderer.material.SetTexture("_BaseMap", originalTexture);
+                // Plugin.Log("Texture applied to property: _BaseMap");
+            }
+            else
+            {
+                iceBottomMeshRenderer.material.SetTexture("_BaseMap", TextureManager.GetTexture(reskinEntry));
+                // Plugin.Log("Texture applied to property: _BaseMap");
+            }
+        
+            // Plugin.Log($"Set the Ice Bottom texture to {reskinEntry.Name} {reskinEntry.Path}");
+            return;
+        }
+        catch (Exception e)
+        {
+            Plugin.LogError($"Error when setting ice texture: {e.Message}");
+        }
+    }
+
+    public static bool UpdateIceSmoothness()
+    {
+        GameObject iceTopGameObject = GameObject.Find("Ice Top");
+
+        if (iceTopGameObject == null)
         {
             Plugin.LogError($"Could not locate Ice Top GameObject.");
             return false;
         }
         
-        MeshRenderer iceBottomMeshRenderer = iceBottomGameObject.GetComponent<MeshRenderer>();
+        MeshRenderer iceTopMeshRenderer = iceTopGameObject.GetComponent<MeshRenderer>();
 
-        if (iceBottomMeshRenderer == null)
+        if (iceTopMeshRenderer == null)
         {
             Debug.LogError("No MeshRenderer found on GameObject Ice Top.");
         }
         
-        string texturePropertyName = SwapperUtils.FindTextureProperty(iceBottomMeshRenderer.material);
-        if (texturePropertyName == null)
-        {
-            Plugin.LogError("No texture property found in the shader.");
-            return false;
-        }
+        iceTopMeshRenderer.material.SetFloat("_Smoothness", ReskinProfileManager.currentProfile.iceSmoothness);
         
-        if (originalTexture == null)
-        {
-            originalTexture = iceBottomMeshRenderer.material.GetTexture(texturePropertyName);
-        }
-        
-        // If setting to unchanged,
-        if (reskinEntry.Path == null)
-        {
-            iceBottomMeshRenderer.material.SetTexture(texturePropertyName, originalTexture);
-            Plugin.Log($"Texture applied to property: {texturePropertyName}");
-        }
-        else
-        {
-            iceBottomMeshRenderer.material.SetTexture(texturePropertyName, TextureManager.loadedTextures[reskinEntry.Path]);
-            Plugin.Log($"Texture applied to property: {texturePropertyName}");
-        }
-
-        // iceBottomMeshRenderer.enabled = false;
-        
-        // TODO find the Ice Top material
-        // TODO 
-        Plugin.Log($"Set the Ice Top texture to {reskinEntry.Name} {reskinEntry.Path}");
+        // Plugin.Log($"Set the Ice Top smoothness to {ReskinProfileManager.currentProfile.iceSmoothness}");
         return true;
     }
     
@@ -98,7 +125,7 @@ public class IceSwapper
                 Texture mainTex = mat.mainTexture;
                 if (mainTex != null && mainTex.name == TargetTextureName)
                 {
-                    Debug.Log($"Found '{TargetTextureName}' on material '{mat.name}' " +
+                    Plugin.LogDebug($"Found '{TargetTextureName}' on material '{mat.name}' " +
                               $"on renderer '{renderer.gameObject.name}'. (Main Texture)");
                     return (renderer.gameObject, renderer, mat, mainTex as Texture2D);
                 }
@@ -113,8 +140,8 @@ public class IceSwapper
                         Texture otherTex = mat.GetTexture(propName);
                         if (otherTex != null && otherTex.name == TargetTextureName)
                         {
-                            Debug.Log($"Found '{TargetTextureName}' on material '{mat.name}' " +
-                                      $"on renderer '{renderer.gameObject.name}'. (Property: {propName})");
+                            Plugin.LogDebug($"Found '{TargetTextureName}' on material '{mat.name}' " +
+                                            $"on renderer '{renderer.gameObject.name}'. (Property: {propName})");
                             return (renderer.gameObject, renderer, mat, otherTex as Texture2D);
                         }
                     }

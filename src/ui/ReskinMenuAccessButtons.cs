@@ -72,23 +72,15 @@ public static class ReskinMenuAccessButtons
                 paddingLeft = 15
             }
         };
-        button.RegisterCallback<MouseEnterEvent>(new EventCallback<MouseEnterEvent>((evt) =>
-        {
-            button.style.backgroundColor = Color.white;
-            button.style.color = Color.black;
-        }));
-        button.RegisterCallback<MouseLeaveEvent>(new EventCallback<MouseLeaveEvent>((evt) =>
-        {
-            button.style.backgroundColor = new StyleColor(new Color(0.25f, 0.25f, 0.25f));
-            button.style.color = Color.white;
-        }));
-        button.RegisterCallback<ClickEvent>(new EventCallback<ClickEvent>(MainMenuOpenReskinManagerClickHandler));
-        static void MainMenuOpenReskinManagerClickHandler(ClickEvent evt)
+        UITools.AddHoverEffectsForButton(button);
+        button.RegisterCallback<ClickEvent>(MainMenuOpenReskinManagerClickHandler);
+
+        return button;
+
+        void MainMenuOpenReskinManagerClickHandler(ClickEvent evt)
         {
             ReskinMenu.Show();
         }
-
-        return button;
     }
 
     public static void Setup()
@@ -103,7 +95,7 @@ public static class ReskinMenuAccessButtons
         AddReskinMenuButtonToMainMenu(UIMainMenu.Instance);
     }
 
-    public static void LocateReferenceButtons()
+    private static void LocateReferenceButtons()
     {
         mainMenuSettingsButton = (Button) _mainMenuSettingsButtonField.GetValue(UIMainMenu.Instance);
         Plugin.Log($"Located main menu settings button: {mainMenuSettingsButton}");

@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Reflection;
 using AYellowpaper.SerializedCollections;
 using UnityEngine;
@@ -15,89 +16,107 @@ public static class StickSwapper
         .GetField("stickMaterialMap", 
             BindingFlags.Instance | BindingFlags.NonPublic);
     
-    public static bool SetStickTexture(Stick stick, ReskinRegistry.ReskinEntry reskin)
+    // private static Dictionary<ulong, Texture> originalTextures = new Dictionary<ulong, Texture>();
+    
+    public static void SetStickTexture(Stick stick, ReskinRegistry.ReskinEntry reskin)
     {
-        Plugin.Log($"Trying to replace stick texture, postspawn");
-        StickMesh stickMesh = stick.StickMesh;
-        if (stickMesh == null)
+        try
         {
-            Plugin.LogError($"stickMesh is null!");
-            return false;
+            Plugin.LogDebug($"Trying to replace stick texture, postspawn");
+            StickMesh stickMesh = stick.StickMesh;
+            if (stickMesh == null)
+            {
+                Plugin.LogError($"stickMesh is null!");
+                return;
+            }
+
+            MeshRenderer stickMeshRenderer = (MeshRenderer)_stickMeshRendererField.GetValue(stickMesh);
+            if (stickMeshRenderer == null)
+            {
+                Plugin.LogError($"stickMeshRenderer is null!");
+                return;
+            }
+
+            // Reset to normal skin
+            if (reskin == null || reskin.Path == null)
+            {
+                stickMesh.SetSkin(stick.Player.Team.Value, stick.Player.GetPlayerStickSkin().ToString());
+                return;
+            }
+
+            // Plugin.Log($"file path: {textureFilePath}");
+            Texture2D texture2D = TextureManager.GetTexture(reskin);
+            if (texture2D == null)
+            {
+                Plugin.LogError($"texture2D is null!");
+                return;
+            }
+
+            // Debugging: Log material and shader
+            Plugin.LogDebug($"Material: {stickMeshRenderer.material.name}");
+            Plugin.LogDebug($"Shader: {stickMeshRenderer.material.shader.name}");
+
+            SerializedDictionary<string, Material> stickMaterialMap =
+                (SerializedDictionary<string, Material>)_stickMaterialMapField.GetValue(stickMesh);
+
+            stickMeshRenderer.material = stickMaterialMap["red_beta_attacker"];
+
+            // string search = ;
+            // foreach (KeyValuePair<string, Material> pair in stickMaterialMap)
+            // {
+            // Plugin.Log($"Material key: {pair.Key}");
+            // Plugin.Log($"Material value: {pair.Value.name} - {pair.Value}");
+            //     if (pair.Key.Contains(search))
+            //         
+            // }
+
+            // // This worked but only when someone had the stick in the world already
+            // Material redBetaMaterial = FindMaterialByRendererScan("Stick Red Beta Attacker");
+            // if (redBetaMaterial != null)
+            // {
+            //     Debug.Log("Found material: " + redBetaMaterial.name);
+            //     // Use the material
+            // }
+            // else
+            // {
+            //     Debug.LogError("Material 'Stick Attacker Red Beta' not found in Resources!");
+            //     return false;
+            // }
+            //
+            // stickMeshRenderer.material = redBetaMaterial;
+
+            // // Dynamically find the texture property
+            // string texturePropertyName = SwapperUtils.FindTextureProperty(stickMeshRenderer.material);
+            // if (texturePropertyName == null)
+            // {
+            //     Plugin.LogError("No texture property found in the shader.");
+            //     return false;
+            // }
+
+            // Save the player's original texture in case we need to switch back to it
+            // if (!originalTextures.ContainsKey(player.OwnerClientId))
+            //     originalTextures.Add(player.OwnerClientId, stickMeshRenderer.material.GetTexture(texturePropertyName));
+
+            // Apply the texture to the found property
+            // stickMeshRenderer.material.SetTexture(texturePropertyName, texture2D);
+            // Plugin.Log($"Texture applied to property: {texturePropertyName}");
+            stickMeshRenderer.material.SetTexture("_Texture", texture2D);
+            Plugin.LogDebug("Texture applied to property: _Texture");
+
+            // Ensure the renderer is enabled
+            if (!stickMeshRenderer.enabled)
+            {
+                Plugin.LogError("stickMeshRenderer is disabled. Enabling it.");
+                stickMeshRenderer.enabled = true;
+            }
+
+            Plugin.LogDebug("Texture applied to stick GameObject!");
+            return;
         }
-        
-        MeshRenderer stickMeshRenderer = (MeshRenderer) _stickMeshRendererField.GetValue(stickMesh);
-        if (stickMeshRenderer == null)
+        catch (Exception ex)
         {
-            Plugin.LogError($"stickMeshRenderer is null!");
-            return false;
+            Plugin.LogError($"Error when setting stick texture: {ex.Message}");
         }
-
-        // Reset to normal skin
-        if (reskin.Path == null)
-        {
-            stickMesh.SetSkin(stick.Player.Team.Value, stick.Player.GetPlayerStickSkin().ToString());
-            return false;
-        }
-        
-        // Plugin.Log($"file path: {textureFilePath}");
-        Texture2D texture2D = TextureManager.loadedTextures[reskin.Path];
-        if (texture2D == null)
-        {
-            Plugin.LogError($"texture2D is null!");
-            return false;
-        }
-
-        // Debugging: Log material and shader
-        Plugin.Log($"Material: {stickMeshRenderer.material.name}");
-        Plugin.Log($"Shader: {stickMeshRenderer.material.shader.name}");
-
-        SerializedDictionary<string, Material> stickMaterialMap = (SerializedDictionary<string, Material>) _stickMaterialMapField.GetValue(stickMesh);
-
-        string search = "red_beta_attacker";
-        foreach (KeyValuePair<string, Material> pair in stickMaterialMap)
-        {
-            Plugin.Log($"Material key: {pair.Key}");
-            Plugin.Log($"Material value: {pair.Value.name} - {pair.Value}");
-            if (pair.Key.Contains(search))
-                stickMeshRenderer.material = pair.Value;
-        }
-        
-        // // This worked but only when someone had the stick in the world already
-        // Material redBetaMaterial = FindMaterialByRendererScan("Stick Red Beta Attacker");
-        // if (redBetaMaterial != null)
-        // {
-        //     Debug.Log("Found material: " + redBetaMaterial.name);
-        //     // Use the material
-        // }
-        // else
-        // {
-        //     Debug.LogError("Material 'Stick Attacker Red Beta' not found in Resources!");
-        //     return false;
-        // }
-        //
-        // stickMeshRenderer.material = redBetaMaterial;
-        
-        // Dynamically find the texture property
-        string texturePropertyName = SwapperUtils.FindTextureProperty(stickMeshRenderer.material);
-        if (texturePropertyName == null)
-        {
-            Plugin.LogError("No texture property found in the shader.");
-            return false;
-        }
-
-        // Apply the texture to the found property
-        stickMeshRenderer.material.SetTexture(texturePropertyName, texture2D);
-        Plugin.Log($"Texture applied to property: {texturePropertyName}");
-
-        // Ensure the renderer is enabled
-        if (!stickMeshRenderer.enabled)
-        {
-            Plugin.LogError("stickMeshRenderer is disabled. Enabling it.");
-            stickMeshRenderer.enabled = true;
-        }
-
-        Plugin.Log("Texture applied to stick GameObject!");
-        return true;
     }
     
     public static Material FindMaterialByRendererScan(string materialNamePartial)
@@ -113,7 +132,7 @@ public static class StickSwapper
             {
                 if (mat != null && mat.name.Contains(materialNamePartial))
                 {
-                    Debug.Log($"Found material '{mat.name}' on object '{renderer.gameObject.name}'");
+                    Plugin.Log($"Found material '{mat.name}' on object '{renderer.gameObject.name}'");
                     return mat; // Return the first match
                 }
             }

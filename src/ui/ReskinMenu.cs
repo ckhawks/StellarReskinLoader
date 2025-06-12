@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using ToasterReskinLoader.swappers;
 using ToasterReskinLoader.ui.sections;
@@ -18,12 +19,11 @@ public static class ReskinMenu
     public static ScrollView sidebarScrollView;
     public static VisualElement contentScrollViewContent;
     
-    public static ChangingRoomStick changingRoomStick;
-    public static ChangingRoomManager changingRoomManager;
+    
     
     // menu state
-    public static string[] sections = new []{"Packs", "Sticks", "Pucks", "Ice", "Arenas" };
-    // "Jerseys", "Nets", "Sounds", "Skybox", "Other"
+    public static string[] sections = new []{"Packs", "Sticks", "Jerseys", "Pucks", "Arena", "Skybox", "About" };
+    // "Sounds", "Other"
     public static int selectedSectionIndex = 0;
     
     public static void Show()
@@ -31,7 +31,7 @@ public static class ReskinMenu
         // If we're in main menu, hide main menu
         // If we're in game, hide pause menu
         
-        Plugin.Log($"Show reskin manager menu");
+        // Plugin.Log($"Show reskin manager menu");
         if (rootContainer == null) Create();
         rootContainer.visible = true;
         rootContainer.enabledSelf = true;
@@ -40,19 +40,25 @@ public static class ReskinMenu
         mainContainer.enabledSelf = true;
         mainContainer.style.display = DisplayStyle.Flex;
 
-        //  // TODO fix this private method
-        
-        Plugin.Log($"Scene: {UnityEngine.SceneManagement.SceneManager.GetActiveScene().name}");
-        if (UnityEngine.SceneManagement.SceneManager.GetActiveScene().name == "changing_room")
+
+        // Plugin.Log($"Scene: {UnityEngine.SceneManagement.SceneManager.GetActiveScene().name}");
+        if (ChangingRoomHelper.IsInMainMenu())
         {
+            // Plugin.Log($"here1");
             if (UIManager.Instance != null)
             {
+                // Plugin.Log($"here2");
                 UIManager.Instance.HideMainMenuComponents();
+                // Plugin.Log($"here3");
                 UIManager.Instance.isMouseActive = true;
+                // Plugin.Log($"here4");
                 Cursor.lockState = CursorLockMode.None;
+                // Plugin.Log($"here5");
                 Cursor.visible = true;
+                // Plugin.Log($"here6");
             }
-            changingRoomManager.Client_MoveCameraToAppearanceDefaultPosition();
+
+            ChangingRoomHelper.ShowBaseFocus();
         }
         else
         {
@@ -72,12 +78,14 @@ public static class ReskinMenu
             }
         }
         
+        // Plugin.Log($"here8");
         if (UIManager.Instance != null)
         {
             UIManager.Instance.isMouseActive = true;
             Cursor.lockState = CursorLockMode.None;
             Cursor.visible = true;
         }
+        // Plugin.Log($"Finish reskin manager menu");
     }
 
     public static void Hide()
@@ -92,14 +100,15 @@ public static class ReskinMenu
         rootContainer.enabledSelf = false;
         rootContainer.style.display = DisplayStyle.None;
         
-        Plugin.Log($"Scene: {UnityEngine.SceneManagement.SceneManager.GetActiveScene().name}");
-        if (UnityEngine.SceneManagement.SceneManager.GetActiveScene().name == "changing_room")
+        // Plugin.Log($"Scene: {UnityEngine.SceneManagement.SceneManager.GetActiveScene().name}");
+        if (ChangingRoomHelper.IsInMainMenu())
         {
             if (UIManager.Instance != null)
             {
                 UIManager.Instance.ShowMainMenuComponents();
             }
-            changingRoomManager.Client_MoveCameraToDefaultPosition();
+
+            ChangingRoomHelper.Unfocus();
         }
         else
         {
@@ -122,28 +131,26 @@ public static class ReskinMenu
 
     public static void Create()
     {
-        Plugin.Log($"Create reskin manager menu 1");
+        // Plugin.Log($"Create reskin manager menu 1");
         rootContainer = new VisualElement();
         rootContainer.style.flexDirection = FlexDirection.Row;
         rootContainer.style.height = new StyleLength(new Length(100, LengthUnit.Percent));
         rootContainer.style.width = new StyleLength(new Length(100, LengthUnit.Percent));
         rootContainer.style.alignItems = Align.Center;
         rootContainer.style.justifyContent = Justify.FlexStart;
+        rootContainer.pickingMode = PickingMode.Ignore; // TODO maybe remove this
         
-        Plugin.Log($"Create reskin manager menu 2");
+        // Plugin.Log($"Create reskin manager menu 2");
         mainContainer = new VisualElement();
         mainContainer.style.backgroundColor = new StyleColor(new Color(0.196f, 0.196f,0.196f, 1));
         mainContainer.style.marginLeft = new StyleLength(new Length(40));
-        // mainContainer.style.paddingLeft = new StyleLength(new Length(10));
-        // mainContainer.style.paddingRight = new StyleLength(new Length(10));
-        // mainContainer.style.paddingTop = new StyleLength(new Length(10));
-        // mainContainer.style.paddingBottom = new StyleLength(new Length(10));
         mainContainer.style.maxWidth = new StyleLength(new Length(45, LengthUnit.Percent));
         mainContainer.style.minWidth = new StyleLength(new Length(45, LengthUnit.Percent));
         mainContainer.style.maxHeight = new StyleLength(new Length(75, LengthUnit.Percent));
         mainContainer.style.minHeight = new StyleLength(new Length(75, LengthUnit.Percent));
+        mainContainer.pickingMode = PickingMode.Position; // TODO maybe remove this
         
-        Plugin.Log($"Create reskin manager menu 3");
+        // Plugin.Log($"Create reskin manager menu 3");
         VisualElement titleContainer = new VisualElement();
         titleContainer.style.flexDirection = FlexDirection.Row;
         // titleContainer.style.flexGrow = 10f;
@@ -158,7 +165,7 @@ public static class ReskinMenu
         titleContainer.style.paddingBottom = 10;
         titleContainer.style.backgroundColor = new StyleColor(new Color(0.14f, 0.14f, 0.14f));
         
-        Plugin.Log($"Create reskin manager menu 4");
+        // Plugin.Log($"Create reskin manager menu 4");
         Label title = new Label("Reskin Manager");
         title.style.fontSize = 30;
         title.style.color = Color.white;
@@ -181,15 +188,36 @@ public static class ReskinMenu
             reloadButton.style.color = Color.white;
         }));
         reloadButton.RegisterCallback<ClickEvent>(new EventCallback<ClickEvent>(ReloadButtonClickHandler));
-        static void ReloadButtonClickHandler(ClickEvent evt)
+        void ReloadButtonClickHandler(ClickEvent evt)
         {
-            Plugin.Log($"Reload button clicked!");
-            // ReloadAllReskinPacks();
+            try
+            {
+                Plugin.Log($"Reloading packs, profile, and textures...");
+                reloadButton.text = "Reloading...";
+                ReskinRegistry.ReloadPacks();
+                Plugin.LogDebug($"Reloading profile...");
+                ReskinProfileManager.LoadProfile();
+                Plugin.LogDebug($"Clearing texture cache...");
+                TextureManager.ClearTextureCache();
+                Plugin.LogDebug($"Loading textures for active reskins...");
+                ReskinProfileManager.LoadTexturesForActiveReskins();
+                Plugin.LogDebug($"Setting all swappers...");
+                SwapperManager.SetAll();
+                Plugin.LogDebug($"Recreating content for selecting section...");
+                CreateContentForSection(selectedSectionIndex);
+                Plugin.Log($"Reload complete!");
+                reloadButton.text = "Reload";
+            }
+            catch (Exception e)
+            {
+                Plugin.LogError($"Failed to reload packs: {e.Message}");
+                reloadButton.text = "Reload Error";
+            }
         }
         titleContainer.Add(reloadButton);
         mainContainer.Add(titleContainer);
         
-        Plugin.Log($"Create reskin manager menu 5");
+        // Plugin.Log($"Create reskin manager menu 5");
         VisualElement pageContainer = new VisualElement();
         pageContainer.style.flexDirection = FlexDirection.Row;
         pageContainer.style.maxWidth = new StyleLength(new Length(100, LengthUnit.Percent));
@@ -201,7 +229,7 @@ public static class ReskinMenu
         mainContainer.Add(pageContainer);
         
         
-        Plugin.Log($"Create reskin manager menu 6");
+        // Plugin.Log($"Create reskin manager menu 6");
         VisualElement sidebarContainer = new VisualElement();
         sidebarContainer.style.flexDirection = FlexDirection.Column;
         sidebarContainer.style.minWidth = new StyleLength(new Length(30, LengthUnit.Percent));
@@ -212,7 +240,7 @@ public static class ReskinMenu
         sidebarContainer.style.height = new StyleLength(new Length(100, LengthUnit.Percent));
         pageContainer.Add(sidebarContainer);
         
-        Plugin.Log($"Create reskin manager menu 7");
+        // Plugin.Log($"Create reskin manager menu 7");
         sidebarScrollView = new ScrollView();
         sidebarScrollView.style.backgroundColor = new StyleColor(new Color(64f / 255f, 64f / 255f, 64f / 255f, 1));
         sidebarContainer.Add(sidebarScrollView);
@@ -252,7 +280,7 @@ public static class ReskinMenu
             button.RegisterCallback<ClickEvent>(new EventCallback<ClickEvent>(SidebarSectionClickHandler));
             void SidebarSectionClickHandler(ClickEvent evt)
             {
-                Plugin.Log($"Sidebar section #{i1} {sections[i1]} clicked!");
+                // Plugin.Log($"Sidebar section #{i1} {sections[i1]} clicked!");
                 // TODO make this change sections
                 UpdateToSection(i1);
             }
@@ -266,7 +294,7 @@ public static class ReskinMenu
             sidebarScrollView.Add(button);
         }
         
-        Plugin.Log($"Create reskin manager menu 8");
+        // Plugin.Log($"Create reskin manager menu 8");
         VisualElement contentContainer = new VisualElement();
         contentContainer.style.flexDirection = FlexDirection.Column;
         // contentContainer.style.paddingLeft = 16;
@@ -304,7 +332,7 @@ public static class ReskinMenu
         contentContainer.Add(contentScrollView);
         CreateContentForSection(selectedSectionIndex);
         
-        Plugin.Log($"Create reskin manager menu 9");
+        // Plugin.Log($"Create reskin manager menu 9");
         VisualElement bottomRow = new VisualElement();
         bottomRow.style.flexDirection = FlexDirection.Row;
         bottomRow.style.justifyContent = Justify.FlexEnd;
@@ -317,7 +345,7 @@ public static class ReskinMenu
         bottomRow.style.paddingBottom = 10;
         bottomRow.style.backgroundColor = new StyleColor(new Color(0.14f, 0.14f, 0.14f));
         
-        Plugin.Log($"Create reskin manager menu 10");
+        // Plugin.Log($"Create reskin manager menu 10");
         Button closeButton = new Button();
         closeButton.text = "CLOSE";
         closeButton.style.backgroundColor = new StyleColor(new Color(0.25f, 0.25f, 0.25f));
@@ -342,15 +370,8 @@ public static class ReskinMenu
             closeButton.style.backgroundColor = new StyleColor(new Color(0.25f, 0.25f, 0.25f));
             closeButton.style.color = Color.white;
         }));
-        closeButton.RegisterCallback<ClickEvent>(new EventCallback<ClickEvent>(QuickChatPlusSettingsCloseButtonClickHandler));
-        static void QuickChatPlusSettingsCloseButtonClickHandler(ClickEvent evt)
-        {
-            // Plugin.Log.LogInfo("QCP Close Button Clicked!");
-            // MainMenuQuickChatSettings.Show();
-            Hide();
-            // Application.OpenURL("http://discord.puckstats.io");
-        }
-        Plugin.Log($"Create reskin manager menu 11");
+        closeButton.RegisterCallback<ClickEvent>(QuickChatPlusSettingsCloseButtonClickHandler);
+        // Plugin.Log($"Create reskin manager menu 11");
         
         bottomRow.Add(closeButton);
         mainContainer.Add(bottomRow);
@@ -358,7 +379,13 @@ public static class ReskinMenu
         rootContainer.visible = false;
         rootContainer.enabledSelf = false;
         ReskinMenuAccessButtons.mainMenuSettingsButton.parent.parent.Add(rootContainer);
-        Plugin.Log($"Create reskin manager menu 12");
+        // Plugin.Log($"Create reskin manager menu 12");
+        return;
+
+        static void QuickChatPlusSettingsCloseButtonClickHandler(ClickEvent evt)
+        {
+            Hide();
+        }
     }
 
     public static void CreateContentForSection(int sectionIndex)
@@ -367,39 +394,35 @@ public static class ReskinMenu
         Label contentSectionTitle = new Label(sections[sectionIndex]);
         contentSectionTitle.style.fontSize = 30;
         contentSectionTitle.style.color = Color.white;
-        // contentSectionTitle.style.marginTop = 20;
         contentScrollViewContent.Add(contentSectionTitle);
 
-        if (UnityEngine.SceneManagement.SceneManager.GetActiveScene().name == "ChangingRoom")
-        {
-            changingRoomManager.Client_MoveCameraToAppearanceDefaultPosition();
-            changingRoomStick.Client_MoveStickToDefaultPosition();
-        }
+        ChangingRoomHelper.ShowBaseFocus();
 
         switch (sections[sectionIndex])
         {
             case "Packs":
                 PacksSection.CreateSection(contentScrollViewContent);
                 break;
+            case "Jerseys":
+                JerseysSection.CreateSection(contentScrollViewContent);
+                break;
             case "Sticks":
                 SticksSection.CreateSection(contentScrollViewContent);
-                break;
-            case "Ice":
-                IceSection.CreateSection(contentScrollViewContent);
                 break;
             case "Pucks":
                 PucksSection.CreateSection(contentScrollViewContent);
                 break;
-            case "Arenas":
+            case "Arena":
                 ArenaSection.CreateSection(contentScrollViewContent);
                 break;
+            case "About":
+                AboutSection.CreateSection(contentScrollViewContent);
+                break;
+            case "Skybox":
+                SkyboxSection.CreateSection(contentScrollViewContent);
+                break;
             default:
-                if (UnityEngine.SceneManagement.SceneManager.GetActiveScene().name == "ChangingRoom")
-                {
-                    changingRoomManager.Client_MoveCameraToAppearanceDefaultPosition();
-                }
-            
-                Label contentSectionDummyText = new Label("v2lettuce\n: toterv2lettuce\n: toterv2lettuce\n: toterv2lettuce\n: toterv2lettuce\n: toterv2lettuce\n: toterv2lettuce\n: toterv2lettuce\n: toterv2lettuce\n: toterv2lettuce\n: toterv2lettuce\n: toterv2lettuce\n: toterv2lettuce\n: toterv2lettuce\n: toterv2lettuce\n: toterv2lettuce\n: toterv2lettuce\n: toterv2lettuce\n: toterv2lettuce\n: toterv2lettuce\n: toterv2lettuce\n: toterv2lettuce\n: toterv2lettuce\n: toterv2lettuce\n: toterv2lettuce\n: toterv2lettuce\n: toterv2lettuce\n: toterv2lettuce\n: toterv2lettuce\n: toterv2lettuce\n: toterv2lettuce\n: toterv2lettuce\n: toterv2lettuce\n: toterv2lettuce\n: toterv2lettuce\n: toterv2lettuce\n: toter");
+                Label contentSectionDummyText = new Label("This section does not yet exist.");
                 contentSectionDummyText.style.fontSize = 14;
                 contentSectionDummyText.style.color = Color.white;
                 contentSectionDummyText.style.marginTop = 20;
@@ -410,6 +433,7 @@ public static class ReskinMenu
     
     public static void UpdateToSection(int sectionIndex)
     {
+        ChangingRoomHelper.Scan();
         int oldSectionIndex = selectedSectionIndex;
         selectedSectionIndex = sectionIndex;
         CreateContentForSection(sectionIndex);
@@ -417,12 +441,12 @@ public static class ReskinMenu
         List<VisualElement> sidebarSectionButtons =
             sidebarScrollView.Children().ToList();
 
-        Plugin.Log($"New section: {selectedSectionIndex}, old section: {oldSectionIndex}");
+        // Plugin.Log($"New section: {selectedSectionIndex}, old section: {oldSectionIndex}");
 
-        for (int i = 0; i < sidebarSectionButtons.Count; i++)
-        {
-            Plugin.Log($"{i}: {sidebarSectionButtons[i].name}");
-        }
+        // for (int i = 0; i < sidebarSectionButtons.Count; i++)
+        // {
+        //     Plugin.Log($"{i}: {sidebarSectionButtons[i].name}");
+        // }
         // for some reason, this is not casting properly and thus nothing below this is running
         Button oldSectionButton = sidebarSectionButtons[oldSectionIndex] as Button;
         oldSectionButton.style.backgroundColor = new StyleColor(new Color(0.25f, 0.25f, 0.25f));
@@ -430,33 +454,8 @@ public static class ReskinMenu
         Button newSectionButton = sidebarSectionButtons[sectionIndex] as Button;
         newSectionButton.style.backgroundColor = new StyleColor(new Color(0.7f, 0.7f, 0.7f));
         newSectionButton.style.color = Color.black;
-        Plugin.Log($"");
+        // Plugin.Log($"");
     }
 
-    public static void Setup()
-    {
-        ChangingRoomStick[] crss = Object.FindObjectsByType<ChangingRoomStick>(FindObjectsSortMode.None);
-        if (crss.Length == 0)
-        {
-            Plugin.LogError($"Could not locate changing room stick. Stopping setup.");
-            // return;
-        }
-        else
-        {
-            changingRoomStick = crss[0];
-        }
-        
-        
-        ChangingRoomManager[] crms = Object.FindObjectsByType<ChangingRoomManager>(FindObjectsSortMode.None);
-        if (crms.Length == 0)
-        {
-            Plugin.LogError($"Could not locate changing room manager. Stopping setup.");
-            // return;
-        }
-        else
-        {
-            changingRoomManager = crms[0];
-        }
-        
-    }
+    
 }

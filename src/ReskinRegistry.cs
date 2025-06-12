@@ -14,8 +14,14 @@ public static class ReskinRegistry
 {
     public static List<ReskinPack> reskinPacks = new List<ReskinPack>();
     public readonly static List<string> ReskinTypes =
-        new List<string>{"stick_attacker", "stick_goalie", "netting", "puck", "rink_ice", "arena"};
+        new List<string>{"stick_attacker", "stick_goalie", "net", "puck", "rink_ice", "jersey_torso", "jersey_groin" }; // , "arena"
 
+    public static void ReloadPacks()
+    {
+        reskinPacks.Clear();
+        LoadPacks();
+    }
+    
     public static void LoadPacks()
     {
         Plugin.Log($"Loading packs...");
@@ -66,12 +72,21 @@ public static class ReskinRegistry
             return;
         }
 
+        // *** NEW LOGIC: Extract Workshop ID from folder name ***
+        string folderName = Path.GetFileName(dir);
+        // ulong.TryParse is perfect here. If it fails (e.g., for a local pack with a text name),
+        // workshopId will remain 0, which is exactly what we want.
+        ulong.TryParse(folderName, out ulong workshopId);
+        
         try
         {
             string json = File.ReadAllText(manifestPath);
             var pack = JsonConvert.DeserializeObject<ReskinPack>(json);
             if (pack != null)
             {
+                // Assign the captured ID to the pack object
+                pack.WorkshopId = workshopId;
+                
                 // make paths absolute
                 foreach (var skin in pack.Reskins)
                 {
@@ -81,6 +96,9 @@ public static class ReskinRegistry
                         continue;
                     };
                     skin.Path = Path.GetFullPath(Path.Combine(dir, skin.Path));
+            
+                    // *** ADD THIS LINE ***
+                    skin.ParentPack = pack; // Set the back-reference to the parent pack
                 }
                 reskinPacks.Add(pack);
                 Plugin.Log($" - Loaded pack: {pack.Name} v{pack.Version} with {pack.Reskins.Count} reskins.");
@@ -118,6 +136,10 @@ public static class ReskinRegistry
 
         [JsonProperty("version")]
         public string Version { get; set; }
+        
+        // This is not part of the JSON file, it's derived from the folder structure at runtime.
+        [JsonIgnore]
+        public ulong WorkshopId { get; set; }
 
         [JsonProperty("reskins")]
         public List<ReskinEntry> Reskins { get; set; } = new List<ReskinEntry>();
@@ -134,5 +156,10 @@ public static class ReskinRegistry
         // this is relative in JSON; we'll make it absolute in LoadPacks()
         [JsonProperty("path")]
         public string Path { get; set; }
+        
+        // Add this property. It will not be saved to/loaded from JSON.
+        // It's a runtime-only reference to the pack this entry belongs to.
+        [JsonIgnore]
+        public ReskinPack ParentPack { get; set; }
     }
 }

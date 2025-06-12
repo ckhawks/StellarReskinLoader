@@ -3,19 +3,21 @@ using UnityEngine.UIElements;
 
 namespace ToasterReskinLoader.ui.sections;
 
-public class PucksSection
+public static class PucksSection
 {
     public static void CreateSection(VisualElement contentScrollViewContent)
     {
         List<ReskinRegistry.ReskinEntry> attackerStickReskins = ReskinRegistry.GetReskinEntriesByType("puck");
-        ReskinRegistry.ReskinEntry unchangedEntry = new ReskinRegistry.ReskinEntry();
-        unchangedEntry.Name = "Default";
-        unchangedEntry.Path = null;
-        unchangedEntry.Type = "puck";
+        ReskinRegistry.ReskinEntry unchangedEntry = new ReskinRegistry.ReskinEntry
+        {
+            Name = "Default",
+            Path = null,
+            Type = "puck"
+        };
         attackerStickReskins.Insert(0, unchangedEntry);
         
         VisualElement puckRow = UITools.CreateConfigurationRow();
-        puckRow.Add(UITools.CreateConfigurationLabel("Ice"));
+        puckRow.Add(UITools.CreateConfigurationLabel("Puck"));
             
         PopupField<ReskinRegistry.ReskinEntry> puckDropdown = UITools.CreateConfigurationDropdownField();
         puckDropdown.RegisterCallback<ChangeEvent<ReskinRegistry.ReskinEntry>>(
@@ -28,6 +30,9 @@ public class PucksSection
         );
         // attackerPersonalStickDropdown.index = 0;
         puckDropdown.choices = attackerStickReskins;
+        puckDropdown.value = ReskinProfileManager.currentProfile.puck != null
+            ? ReskinProfileManager.currentProfile.puck
+            : unchangedEntry;
         puckRow.Add(puckDropdown);
         contentScrollViewContent.Add(puckRow);
     }
