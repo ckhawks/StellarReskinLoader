@@ -47,8 +47,8 @@ public static class SwapperManager
         if (player == null || player.PlayerBody == null || player.Stick == null)
             return;
         
-        Plugin.Log($"player.Team {player.Team.Value.ToString()}");
-        Plugin.Log($"player.Role {player.Role.Value.ToString()}");
+        Plugin.LogDebug($"player.Team {player.Team.Value.ToString()}");
+        Plugin.LogDebug($"player.Role {player.Role.Value.ToString()}");
         
         switch (player.Team.Value)
         {

@@ -58,17 +58,20 @@ public static class StickSwapper
 
             SerializedDictionary<string, Material> stickMaterialMap =
                 (SerializedDictionary<string, Material>)_stickMaterialMapField.GetValue(stickMesh);
-
-            stickMeshRenderer.material = stickMaterialMap["red_beta_attacker"];
-
-            // string search = ;
             // foreach (KeyValuePair<string, Material> pair in stickMaterialMap)
             // {
-            // Plugin.Log($"Material key: {pair.Key}");
-            // Plugin.Log($"Material value: {pair.Value.name} - {pair.Value}");
-            //     if (pair.Key.Contains(search))
-            //         
+            //     Plugin.Log($"Material key: {pair.Key}");
+            //     Plugin.Log($"Material value: {pair.Value.name} - {pair.Value}");
+            //     // if (pair.Key.Contains(search))
             // }
+            
+            if (stick.Player.Role.Value == PlayerRole.Attacker)
+                stickMeshRenderer.material = stickMaterialMap["red_beta_attacker"];
+            if (stick.Player.Role.Value == PlayerRole.Goalie)
+                stickMeshRenderer.material = stickMaterialMap["red_beta_goalie"];
+
+            // string search = ;
+            
 
             // // This worked but only when someone had the stick in the world already
             // Material redBetaMaterial = FindMaterialByRendererScan("Stick Red Beta Attacker");

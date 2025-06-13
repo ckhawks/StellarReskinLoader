@@ -108,6 +108,11 @@ public static class SticksSection
             
         // Goalie section
         List<ReskinRegistry.ReskinEntry> goalieStickReskins = ReskinRegistry.GetReskinEntriesByType("stick_goalie");
+        ReskinRegistry.ReskinEntry unchangedGoalieEntry = new ReskinRegistry.ReskinEntry();
+        unchangedGoalieEntry.Name = "Unchanged";
+        unchangedGoalieEntry.Path = null;
+        unchangedGoalieEntry.Type = "stick_goalie";
+        goalieStickReskins.Insert(0, unchangedGoalieEntry);
         Label goalieSticksTitle = new Label("Goalie");
         goalieSticksTitle.style.fontSize = 24;
         goalieSticksTitle.style.color = Color.white;
