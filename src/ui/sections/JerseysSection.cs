@@ -23,6 +23,12 @@ public static class JerseysSection
         // Change red team groin
         // Change red goalie torso
         // Change red goalie groin
+        
+        Label description = new Label();
+        description.text = $"Note: Jerseys will not show in changing room currently.";
+        description.style.fontSize = 14;
+        description.style.marginBottom = 8;
+        contentScrollViewContent.Add(description);
             
         // Attacker section
         List<ReskinRegistry.ReskinEntry> jerseyTorsos = ReskinRegistry.GetReskinEntriesByType("jersey_torso");

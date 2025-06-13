@@ -23,7 +23,7 @@ public static class JerseySwapper
             BindingFlags.Instance | BindingFlags.NonPublic);
     public static void SetJerseyForPlayer(Player player)
     {
-        Plugin.LogDebug($"Setting jersey for {player.Username.Value} isReplay {player.IsReplay.Value}");
+        Plugin.LogDebug($"Setting jersey for {player.Username.Value} {player.Team.Value} isReplay {player.IsReplay.Value}");
         PlayerTeam team = player.Team.Value;
 
         if (team is not (PlayerTeam.Blue or PlayerTeam.Red))
@@ -63,16 +63,18 @@ public static class JerseySwapper
 
             if (!originalBlueTorsoTextures.ContainsKey(player.OwnerClientId))
             {
-                originalBlueTorsoTextures.Add(player.OwnerClientId, torsoMeshRenderer.material.mainTexture);
+                if (torsoMeshRenderer.material.mainTexture.name.Contains("blue_"))
+                    originalBlueTorsoTextures.Add(player.OwnerClientId, torsoMeshRenderer.material.mainTexture);
             }
-            
+
             if (player.Role.Value == PlayerRole.Goalie)
             {
                 if (ReskinProfileManager.currentProfile.blueGoalieTorso == null ||
                     ReskinProfileManager.currentProfile.blueGoalieTorso.Path == null)
                 {
                     //  Restore original blue torso we saved
-                    torsoMeshRenderer.material.mainTexture = originalBlueTorsoTextures[player.OwnerClientId];   
+                    if (originalBlueTorsoTextures.ContainsKey(player.OwnerClientId))
+                        torsoMeshRenderer.material.mainTexture = originalBlueTorsoTextures[player.OwnerClientId];   
                 }
                 else
                 {
@@ -103,8 +105,8 @@ public static class JerseySwapper
                     ReskinProfileManager.currentProfile.blueSkaterTorso.Path == null)
                 {
                     //  Restore original blue torso we saved
-                    Plugin.LogDebug($"Resetting blue skater torso");
-                    torsoMeshRenderer.material.mainTexture = originalBlueTorsoTextures[player.OwnerClientId];   
+                    if (originalBlueTorsoTextures.ContainsKey(player.OwnerClientId))
+                        torsoMeshRenderer.material.mainTexture = originalBlueTorsoTextures[player.OwnerClientId];   
                 }
                 else
                 {
@@ -140,16 +142,20 @@ public static class JerseySwapper
             
             if (!originalRedTorsoTextures.ContainsKey(player.OwnerClientId))
             {
-                originalRedTorsoTextures.Add(player.OwnerClientId, torsoMeshRenderer.material.mainTexture);
+                if (torsoMeshRenderer.material.mainTexture.name.Contains("red_"))
+                {
+                    originalRedTorsoTextures.Add(player.OwnerClientId, torsoMeshRenderer.material.mainTexture);
+                }
             }
-
+            
             if (player.Role.Value == PlayerRole.Goalie)
             {
                 if (ReskinProfileManager.currentProfile.redGoalieTorso == null ||
                     ReskinProfileManager.currentProfile.redGoalieTorso.Path == null)
                 {
                     //  Restore original red torso we saved
-                    torsoMeshRenderer.material.mainTexture = originalRedTorsoTextures[player.OwnerClientId];   
+                    if (originalRedTorsoTextures.ContainsKey(player.OwnerClientId))
+                        torsoMeshRenderer.material.mainTexture = originalRedTorsoTextures[player.OwnerClientId];   
                 }
                 else
                 {
@@ -180,7 +186,11 @@ public static class JerseySwapper
                     ReskinProfileManager.currentProfile.redSkaterTorso.Path == null)
                 {
                     //  Restore original red torso we saved
-                    torsoMeshRenderer.material.mainTexture = originalRedTorsoTextures[player.OwnerClientId];   
+                    if (originalRedTorsoTextures.ContainsKey(player.OwnerClientId))
+                    {
+                        torsoMeshRenderer.material.mainTexture = originalRedTorsoTextures[player.OwnerClientId];  
+                    }
+                         
                 }
                 else
                 {
@@ -189,7 +199,7 @@ public static class JerseySwapper
                     torsoMeshRenderer.material.SetTexture("_BaseMap",
                         TextureManager.GetTexture(ReskinProfileManager.currentProfile.redSkaterTorso));
                 }
-
+                
                 if (ReskinProfileManager.currentProfile.redSkaterGroin == null ||
                     ReskinProfileManager.currentProfile.redSkaterGroin.Path == null)
                 {
