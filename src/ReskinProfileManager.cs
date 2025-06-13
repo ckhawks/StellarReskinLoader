@@ -345,6 +345,8 @@ public static class ReskinProfileManager
         {
             TextureManager.GetTexture(reskinEntry);
         }
+
+        PuckSwapper.GetBumpMapPathAndLoad();
         Plugin.Log($"Loaded active reskins textures to memory!");
     }
     

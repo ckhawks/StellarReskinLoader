@@ -120,7 +120,8 @@ public static class ArenaSwapper
     private static string[] namesOfScoreboardObjects = new[]
     {
         "scoreboard",
-        "Scoreboard"
+        "Scoreboard",
+        "Scoreboard (1)"
     };
 
     private static string[] namesOfCrowdObjects = new[]
@@ -228,7 +229,14 @@ public static class ArenaSwapper
 
             if (namesOfScoreboardObjects.Contains(gameObject.name))
             {
-                hiddenScoreboardObjects.Add(gameObject);
+                if (!hiddenScoreboardObjects.Contains(gameObject))
+                    hiddenScoreboardObjects.Add(gameObject);
+                if (gameObject.GetComponent<Scoreboard>() != null)
+                {
+                    // Plugin.Log($"turning off scoreboard {gameObject.name}");
+                    Scoreboard scoreboard = gameObject.GetComponent<Scoreboard>();
+                    scoreboard.TurnOff();
+                }
                 gameObject.SetActive(false);
 
                 MeshRenderer mr = gameObject.GetComponent<MeshRenderer>();
@@ -250,6 +258,11 @@ public static class ArenaSwapper
             if (mr != null)
             {
                 mr.enabled = true;
+            }
+            if (obj.GetComponent<Scoreboard>() != null)
+            {
+                Scoreboard scoreboard = obj.GetComponent<Scoreboard>();
+                scoreboard.TurnOn();
             }
         }
 
@@ -542,7 +555,7 @@ public static class ArenaSwapper
     public static class ScoreboardTurnOnPatch
     {
         [HarmonyPrefix]
-        public static bool Postfix(Scoreboard __instance)
+        public static bool Prefix(Scoreboard __instance)
         {
             if (!ReskinProfileManager.currentProfile.scoreboardEnabled)
             {
@@ -557,7 +570,7 @@ public static class ArenaSwapper
     public static class ScoreboardTurnOffPatch
     {
         [HarmonyPrefix]
-        public static bool Postfix(Scoreboard __instance)
+        public static bool Prefix(Scoreboard __instance)
         {
             if (!ReskinProfileManager.currentProfile.scoreboardEnabled)
             {

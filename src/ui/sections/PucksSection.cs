@@ -35,5 +35,8 @@ public static class PucksSection
             : unchangedEntry;
         puckRow.Add(puckDropdown);
         contentScrollViewContent.Add(puckRow);
+        Label bumpMapNoticeLabel =
+            new Label("<size=14>The puck's bump map will be set to a clean map when any custom reskins are selected.");
+        contentScrollViewContent.Add(bumpMapNoticeLabel);
     }
 }

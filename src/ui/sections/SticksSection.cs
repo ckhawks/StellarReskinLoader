@@ -8,7 +8,13 @@ public static class SticksSection
 {
     public static void CreateSection(VisualElement contentScrollViewContent)
     {
-        ChangingRoomHelper.ShowStick();
+        void showStick()
+        {
+            ChangingRoomHelper.ShowStick();
+        }
+        
+        contentScrollViewContent.schedule.Execute(showStick).ExecuteLater(2);
+        
 
         Label monetizationDisclaimer = new Label(
             "<size=14>Please support the developer, GAFURIX, by subscribing to the Puck Patreon and purchasing the in-game cosmetics. Please do not use Toaster's Reskin Loader as a way to circumvent supporting the game's developer.</size><br>");
@@ -38,6 +44,7 @@ public static class SticksSection
                 ReskinRegistry.ReskinEntry chosen = evt.newValue;
                 Plugin.Log($"User picked ID={chosen.Path}, Name={chosen.Name}");
                 ReskinProfileManager.SetSelectedReskinInCurrentProfile(chosen, "stick_attacker", "blue_personal");
+                ChangingRoomHelper.UpdateStickDisplayToReskin(chosen, PlayerRole.Attacker);
             })
         );
         // attackerPersonalStickDropdown.index = 0;
@@ -58,6 +65,7 @@ public static class SticksSection
                 ReskinRegistry.ReskinEntry chosen = evt.newValue;
                 Plugin.Log($"User picked ID={chosen.Path}, Name={chosen.Name}");
                 ReskinProfileManager.SetSelectedReskinInCurrentProfile(chosen, "stick_attacker", "red_personal");
+                ChangingRoomHelper.UpdateStickDisplayToReskin(chosen, PlayerRole.Attacker);
             })
         );
         // attackerPersonalStickDropdown.index = 0;
@@ -78,6 +86,7 @@ public static class SticksSection
                 ReskinRegistry.ReskinEntry chosen = evt.newValue;
                 Plugin.Log($"User picked ID={chosen.Path}, Name={chosen.Name}");
                 ReskinProfileManager.SetSelectedReskinInCurrentProfile(chosen, "stick_attacker", "blue_team");
+                ChangingRoomHelper.UpdateStickDisplayToReskin(chosen, PlayerRole.Attacker);
             })
         );
         attackerBlueStickDropdown.choices = attackerStickReskins;
@@ -97,6 +106,7 @@ public static class SticksSection
                 ReskinRegistry.ReskinEntry chosen = evt.newValue;
                 Plugin.Log($"User picked ID={chosen.Path}, Name={chosen.Name}");
                 ReskinProfileManager.SetSelectedReskinInCurrentProfile(chosen, "stick_attacker", "red_team");
+                ChangingRoomHelper.UpdateStickDisplayToReskin(chosen, PlayerRole.Attacker);
             })
         );
         attackerRedStickDropdown.choices = attackerStickReskins;
@@ -128,6 +138,7 @@ public static class SticksSection
                 ReskinRegistry.ReskinEntry chosen = evt.newValue;
                 Plugin.Log($"User picked ID={chosen.Path}, Name={chosen.Name}");
                 ReskinProfileManager.SetSelectedReskinInCurrentProfile(chosen, "stick_goalie", "blue_personal");
+                ChangingRoomHelper.UpdateStickDisplayToReskin(chosen, PlayerRole.Goalie);
             })
         );
         goalieBluePersonalStickDropdown.choices = goalieStickReskins;
@@ -147,6 +158,7 @@ public static class SticksSection
                 ReskinRegistry.ReskinEntry chosen = evt.newValue;
                 Plugin.Log($"User picked ID={chosen.Path}, Name={chosen.Name}");
                 ReskinProfileManager.SetSelectedReskinInCurrentProfile(chosen, "stick_goalie", "red_personal");
+                ChangingRoomHelper.UpdateStickDisplayToReskin(chosen, PlayerRole.Goalie);
             })
         );
         goalieRedPersonalStickDropdown.choices = goalieStickReskins;
@@ -166,6 +178,7 @@ public static class SticksSection
                 ReskinRegistry.ReskinEntry chosen = evt.newValue;
                 Plugin.Log($"User picked ID={chosen.Path}, Name={chosen.Name}");
                 ReskinProfileManager.SetSelectedReskinInCurrentProfile(chosen, "stick_goalie", "blue_team");
+                ChangingRoomHelper.UpdateStickDisplayToReskin(chosen, PlayerRole.Goalie);
             })
         );
         goalieBlueStickDropdown.choices = goalieStickReskins;
@@ -184,6 +197,7 @@ public static class SticksSection
                 ReskinRegistry.ReskinEntry chosen = evt.newValue;
                 Plugin.Log($"User picked ID={chosen.Path}, Name={chosen.Name}");
                 ReskinProfileManager.SetSelectedReskinInCurrentProfile(chosen, "stick_goalie", "red_team");
+                ChangingRoomHelper.UpdateStickDisplayToReskin(chosen, PlayerRole.Goalie);
             })
         );
         goalieRedStickDropdown.choices = goalieStickReskins;

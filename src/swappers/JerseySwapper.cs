@@ -23,6 +23,7 @@ public static class JerseySwapper
             BindingFlags.Instance | BindingFlags.NonPublic);
     public static void SetJerseyForPlayer(Player player)
     {
+        Plugin.LogDebug($"Setting jersey for {player.Username.Value} isReplay {player.IsReplay.Value}");
         PlayerTeam team = player.Team.Value;
 
         if (team is not (PlayerTeam.Blue or PlayerTeam.Red))
@@ -44,8 +45,8 @@ public static class JerseySwapper
             (MeshRendererTexturer) _meshRendererTexturerGroinField.GetValue(player.PlayerBody.PlayerMesh.PlayerGroin);
         
         // can call torsoMeshRendererTexturer.SetTexture(Texture);
-        MeshRenderer torsoMeshRenderer = (MeshRenderer)_meshRendererField.GetValue(torsoMeshRendererTexturer);
-        MeshRenderer groinMeshRenderer = (MeshRenderer)_meshRendererField.GetValue(groinMeshRendererTexturer);
+        MeshRenderer torsoMeshRenderer = (MeshRenderer) _meshRendererField.GetValue(torsoMeshRendererTexturer);
+        MeshRenderer groinMeshRenderer = (MeshRenderer) _meshRendererField.GetValue(groinMeshRendererTexturer);
 
         // SwapperUtils.FindTextureProperties(torsoMeshRenderer.material);
         // Plugin.Log($"Texture torso property: {SwapperUtils.FindTextureProperty(torsoMeshRenderer.material)}");

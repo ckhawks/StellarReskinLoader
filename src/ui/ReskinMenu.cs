@@ -35,7 +35,14 @@ public static class ReskinMenu
         // If we're in game, hide pause menu
         
         // Plugin.Log($"Show reskin manager menu");
-        if (rootContainer == null) Create();
+        if (rootContainer == null)
+        {
+            Create();
+        }
+        else
+        {
+            CreateContentForSection(selectedSectionIndex); // TODO this isn't the most optimized but it will retrigger things that should happen when open section
+        }
         rootContainer.visible = true;
         rootContainer.enabledSelf = true;
         rootContainer.style.display = DisplayStyle.Flex;
@@ -112,6 +119,7 @@ public static class ReskinMenu
             }
 
             ChangingRoomHelper.Unfocus();
+            ChangingRoomHelper.UpdateStickToPersonalSelected();
         }
         else
         {
@@ -145,7 +153,7 @@ public static class ReskinMenu
         
         // Plugin.Log($"Create reskin manager menu 2");
         mainContainer = new VisualElement();
-        mainContainer.style.backgroundColor = new StyleColor(new Color(0.196f, 0.196f,0.196f, 1));
+        mainContainer.style.backgroundColor = new StyleColor(new Color(0.196f, 0.196f,0.196f, 1)); // TODO took this off
         mainContainer.style.marginLeft = new StyleLength(new Length(40));
         mainContainer.style.maxWidth = new StyleLength(new Length(45, LengthUnit.Percent));
         mainContainer.style.minWidth = new StyleLength(new Length(45, LengthUnit.Percent));
@@ -195,21 +203,36 @@ public static class ReskinMenu
         {
             try
             {
-                Plugin.Log($"Reloading packs, profile, and textures...");
+                void reload()
+                {
+                    Plugin.Log($"Reloading packs, profile, and textures...");
+                    ReskinRegistry.ReloadPacks();
+                    Plugin.LogDebug($"Reloading profile...");
+                    ReskinProfileManager.LoadProfile();
+                    Plugin.LogDebug($"Clearing texture cache...");
+                    TextureManager.ClearTextureCache();
+                    Plugin.LogDebug($"Loading textures for active reskins...");
+                    ReskinProfileManager.LoadTexturesForActiveReskins();
+                    Plugin.LogDebug($"Setting all swappers...");
+                    SwapperManager.SetAll();
+                    Plugin.LogDebug($"Recreating content for selecting section...");
+                    CreateContentForSection(selectedSectionIndex);
+                    Plugin.Log($"Reload complete!");
+                    reloadButton.text = "Reloaded!";
+                    reloadButton.SetEnabled(false);
+                    reloadButton.style.backgroundColor = new StyleColor(new Color(0.25f, 0.25f, 0.25f, 0.5f));
+
+                    void postreload()
+                    {
+                        reloadButton.text = "Reload";
+                        reloadButton.SetEnabled(true);
+                        reloadButton.style.backgroundColor = new StyleColor(new Color(0.25f, 0.25f, 0.25f));
+                    }
+                    
+                    contentScrollViewContent.schedule.Execute(postreload).ExecuteLater(2000);
+                }
                 reloadButton.text = "Reloading...";
-                ReskinRegistry.ReloadPacks();
-                Plugin.LogDebug($"Reloading profile...");
-                ReskinProfileManager.LoadProfile();
-                Plugin.LogDebug($"Clearing texture cache...");
-                TextureManager.ClearTextureCache();
-                Plugin.LogDebug($"Loading textures for active reskins...");
-                ReskinProfileManager.LoadTexturesForActiveReskins();
-                Plugin.LogDebug($"Setting all swappers...");
-                SwapperManager.SetAll();
-                Plugin.LogDebug($"Recreating content for selecting section...");
-                CreateContentForSection(selectedSectionIndex);
-                Plugin.Log($"Reload complete!");
-                reloadButton.text = "Reload";
+                contentScrollViewContent.schedule.Execute(reload).ExecuteLater(10);
             }
             catch (Exception e)
             {
@@ -226,9 +249,9 @@ public static class ReskinMenu
         pageContainer.style.maxWidth = new StyleLength(new Length(100, LengthUnit.Percent));
         pageContainer.style.minWidth = new StyleLength(new Length(100, LengthUnit.Percent));
         pageContainer.style.width = new StyleLength(new Length(100, LengthUnit.Percent));
-        pageContainer.style.maxHeight = new StyleLength(new Length(75, LengthUnit.Percent));
-        pageContainer.style.minHeight = new StyleLength(new Length(75, LengthUnit.Percent));
-        pageContainer.style.height = new StyleLength(new Length(75, LengthUnit.Percent));
+        pageContainer.style.maxHeight = new StyleLength(new Length(76, LengthUnit.Percent)); // TODO i made this 75->100
+        pageContainer.style.minHeight = new StyleLength(new Length(76, LengthUnit.Percent));
+        pageContainer.style.height = new StyleLength(new Length(76, LengthUnit.Percent));
         mainContainer.Add(pageContainer);
         
         
@@ -400,6 +423,7 @@ public static class ReskinMenu
         contentScrollViewContent.Add(contentSectionTitle);
 
         ChangingRoomHelper.ShowBaseFocus();
+        ChangingRoomHelper.UpdateStickToPersonalSelected();
 
         switch (sections[sectionIndex])
         {
@@ -485,12 +509,41 @@ public static class ReskinMenu
         }
     }
 
+    // GET THAT FUCKING SCOREBOARD OFF
+    // [HarmonyPatch(typeof(ScoreboardController), "Event_OnGamePhaseChanged")]
+    // private static class ScoreboardControllerOnGamePhaseChangedPatch
+    // {
+    //     [HarmonyPrefix]
+    //     static bool Prefix(ScoreboardController __instance, Dictionary<string, object> message)
+    //     {
+    //         try
+    //         {
+    //             if (ReskinProfileManager.currentProfile.scoreboardEnabled)
+    //             {
+    //                 // ArenaSwapper.UpdateScoreboardState();
+    //             }
+    //             else
+    //             {
+    //                 ArenaSwapper.UpdateScoreboardState();
+    //                 return false;
+    //             }
+    //             
+    //         }
+    //         catch (Exception e)
+    //         {
+    //             Plugin.LogError($"Error while handling ScoreboardController OnGamePhaseChanged postfix: {e}");
+    //         }
+    //
+    //         return true;
+    //     }
+    // }
+    
     // If the game phase changes, keep the mouse visible (make it visible again to counteract other things)
-    [HarmonyPatch(typeof(ScoreboardController), "Event_OnGamePhaseChanged")]
-    private static class ScoreboardControllerOnGamePhaseChangedPatch
+    [HarmonyPatch(typeof(ReplayManagerController), "Event_OnGamePhaseChanged" )]
+    private static class ReplayManagerControllerOnGamePhaseChangedPatch
     {
         [HarmonyPostfix]
-        static void Postfix(ScoreboardController __instance, Dictionary<string, object> message)
+        static void Postfix(ReplayManagerController __instance, Dictionary<string, object> message)
         {
             try
             {
@@ -508,7 +561,7 @@ public static class ReskinMenu
             }
             catch (Exception e)
             {
-                Plugin.LogError($"Error while handling ScoreboardController OnGamePhaseChanged postfix: {e}");
+                Plugin.LogError($"Error while handling ReplayManagerController OnGamePhaseChanged postfix: {e}");
             }
         }
     }

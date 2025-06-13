@@ -90,6 +90,33 @@ public static class TextureManager
         }
     }
 
+    public static Texture2D GetTextureFromFilePath(string filePath)
+    {
+        // 1. Check if the texture is already cached.
+        if (_loadedTextures.TryGetValue(filePath, out var cachedTexture))
+        {
+            // Return the cached texture if it's not null (it might have been destroyed)
+            if (cachedTexture != null)
+            {
+                return cachedTexture;
+            }
+            // If it was destroyed but still in the dictionary, remove it and proceed to load.
+            _loadedTextures.Remove(filePath);
+        }
+
+        // 2. If not cached, load it from disk.
+        Plugin.LogDebug($"Cache miss for '{filePath}'. Loading texture from: {filePath}");
+        Texture2D newTexture = LoadTextureFromFile(filePath);
+
+        if (newTexture != null)
+        {
+            // 3. Add the newly loaded texture to the cache.
+            _loadedTextures[filePath] = newTexture;
+        }
+
+        return newTexture;
+    }
+    
     // private static Texture2D LoadTexture(string filePath)
     // {
     //     // TODO make all reskin's textures load into a dictionary or something at setup

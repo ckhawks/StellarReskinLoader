@@ -8,7 +8,12 @@ public static class JerseysSection
 {
     public static void CreateSection(VisualElement contentScrollViewContent)
     {
-        ChangingRoomHelper.ShowBody();
+        void showBody()
+        {
+            ChangingRoomHelper.ShowBody();
+        }
+        
+        contentScrollViewContent.schedule.Execute(showBody).ExecuteLater(2);
         
         // Change blue team torso
         // Change blue team groin

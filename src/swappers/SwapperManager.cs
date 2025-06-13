@@ -9,18 +9,18 @@ public static class SwapperManager
 {
     // TODO this class should call the various swappers to trigger them to set textures/reskins whenever game events happen.
     // TODO we also need like a SettingsManager or something that handles the state of which reskins are selected, and handles saving/loading profiles
-    
+
     // TODO all selected skins' Texture2D's should be loaded into memory.
     // TODO when someone selects a new skin we can load that one into memory
-    
+
     // TODO we need to save each player's vanilla setup (stick, jersey) before applying anything
-    
+
     // Intended to be called whenever we need to update the local player's stick
     public static void OnPersonalStickChanged()
     {
         SetStickReskinForPlayer(PlayerManager.Instance.GetLocalPlayer());
     }
-    
+
     public static void OnBlueTeamStickChanged()
     {
         List<Player> bluePlayers = PlayerManager.Instance.GetSpawnedPlayersByTeam(PlayerTeam.Blue);
@@ -30,7 +30,7 @@ public static class SwapperManager
                 SetStickReskinForPlayer(bluePlayer);
         }
     }
-    
+
     public static void OnRedTeamStickChanged()
     {
         List<Player> redPlayers = PlayerManager.Instance.GetSpawnedPlayersByTeam(PlayerTeam.Red);
@@ -46,13 +46,16 @@ public static class SwapperManager
         // If we are missing a part of the player, player body, or stick
         if (player == null || player.PlayerBody == null || player.Stick == null)
             return;
-        
+
         Plugin.LogDebug($"player.Team {player.Team.Value.ToString()}");
         Plugin.LogDebug($"player.Role {player.Role.Value.ToString()}");
-        
+
+        bool isReplayLocalPlayer = player.IsReplay.Value &&
+                                   PlayerManager.Instance.GetLocalPlayer().OwnerClientId == player.OwnerClientId - 1337UL;
+
         switch (player.Team.Value)
         {
-            case PlayerTeam.Blue when player.IsLocalPlayer:
+            case PlayerTeam.Blue when player.IsLocalPlayer || isReplayLocalPlayer:
                 StickSwapper.SetStickTexture(player.Stick,
                     player.Role.Value == PlayerRole.Attacker
                         ? ReskinProfileManager.currentProfile.stickAttackerBluePersonal
@@ -66,7 +69,7 @@ public static class SwapperManager
                         : ReskinProfileManager.currentProfile.stickGoalieBlue);
 
                 return;
-            case PlayerTeam.Red when player.IsLocalPlayer:
+            case PlayerTeam.Red when player.IsLocalPlayer || isReplayLocalPlayer:
                 StickSwapper.SetStickTexture(player.Stick,
                     player.Role.Value == PlayerRole.Attacker
                         ? ReskinProfileManager.currentProfile.stickAttackerRedPersonal
@@ -86,51 +89,74 @@ public static class SwapperManager
         }
     }
 
-    [HarmonyPatch(typeof(Stick), "OnNetworkPostSpawn")]
-    public static class StickOnNetworkPostSpawn
+    // [HarmonyPatch(typeof(Stick), "OnNetworkPostSpawn")]
+    // public static class StickOnNetworkPostSpawn
+    // {
+    //     [HarmonyPostfix]
+    //     public static void Postfix(Stick __instance)
+    //     {
+    //         Plugin.LogDebug($"Stick.OnNetworkPostSpawn");
+    //         Player player = __instance.PlayerBody.Player;
+    //
+    //         SetStickReskinForPlayer(player);
+    //         JerseySwapper.SetJerseyForPlayer(player);
+    //     }
+    // }
+
+    // [HarmonyPatch(typeof(Player), "OnPlayerRoleChanged")]
+    // public static class PlayerOnPlayerRoleChanged
+    // {
+    //     [HarmonyPostfix]
+    //     public static void Postfix(Player __instance, PlayerRole newRole)
+    //     {
+    //         Plugin.LogDebug($"Player.OnPlayerRoleChanged");
+    //
+    //         if (newRole != null && newRole != PlayerRole.None)
+    //         {
+    //             SetStickReskinForPlayer(__instance);
+    //             JerseySwapper.SetJerseyForPlayer(__instance);
+    //         }
+    //     }
+    // }
+
+    // [HarmonyPatch(typeof(Player), "OnNetworkPostSpawn")]
+    // public static class PlayerOnNetworkPostSpawn
+    // {
+    //     [HarmonyPostfix]
+    //     public static void Postfix(Player __instance)
+    //     {
+    //         Plugin.LogDebug($"Player.OnNetworkPostSpawn");
+    //         OnPersonalStickChanged();
+    //         OnBlueTeamStickChanged();
+    //         OnRedTeamStickChanged();
+    //         // OnBlueJerseyChanged();
+    //         // OnRedJerseyChanged();
+    //     }
+    // }
+
+    // This patch makes the jersey change when a player spawns
+    [HarmonyPatch(typeof(PlayerBodyV2), nameof(PlayerBodyV2.UpdateMesh))]
+    public static class PlayerBodyV2UpdateMesh
+    {
+        [HarmonyPostfix]
+        public static void Postfix(PlayerBodyV2 __instance)
+        {
+            JerseySwapper.SetJerseyForPlayer(__instance.Player);
+        }
+    }
+
+    // This patch makes the stick change when a player spawns
+    [HarmonyPatch(typeof(Stick), nameof(Stick.UpdateStick))]
+    public static class StickUpdateStickPatch
     {
         [HarmonyPostfix]
         public static void Postfix(Stick __instance)
         {
-            Plugin.LogDebug($"Stick.OnNetworkPostSpawn");
-            Player player = __instance.PlayerBody.Player;
-            
-            SetStickReskinForPlayer(player);
-            JerseySwapper.SetJerseyForPlayer(player);
+            Plugin.LogDebug($"Stick.UpdateStick");
+            SetStickReskinForPlayer(__instance.Player);
         }
     }
 
-    [HarmonyPatch(typeof(Player), "OnPlayerRoleChanged")]
-    public static class PlayerOnPlayerRoleChanged
-    {
-        [HarmonyPostfix]
-        public static void Postfix(Player __instance, PlayerRole newRole)
-        {
-            Plugin.LogDebug($"Player.OnPlayerRoleChanged");
-
-            if (newRole != null && newRole != PlayerRole.None)
-            {
-                SetStickReskinForPlayer(__instance);
-                JerseySwapper.SetJerseyForPlayer(__instance);
-            }
-        }
-    }
-
-    [HarmonyPatch(typeof(Player), "OnNetworkPostSpawn")]
-    public static class PlayerOnNetworkPostSpawn
-    {
-        [HarmonyPostfix]
-        public static void Postfix(Player __instance)
-        {
-            Plugin.LogDebug($"Player.OnNetworkPostSpawn");
-            OnPersonalStickChanged();
-            OnBlueTeamStickChanged();
-            OnRedTeamStickChanged();
-            // OnBlueJerseyChanged();
-            // OnRedJerseyChanged();
-        }
-    }
-    
     public static void Setup()
     {
         global::UnityEngine.SceneManagement.SceneManager.sceneLoaded += OnSceneLoaded;
@@ -146,7 +172,6 @@ public static class SwapperManager
         Plugin.Log($"OnSceneLoaded: {scene.name}");
         if (scene.name.Equals("changing_room"))
         {
-            
         }
         else
         {
@@ -200,6 +225,7 @@ public static class SwapperManager
             ArenaSwapper.UpdateScoreboardState();
             ArenaSwapper.UpdateGlassState();
             ArenaSwapper.UpdateBoards();
+            ArenaSwapper.UpdateGlassAndPillars();
             ArenaSwapper.UpdateSpectators();
             ArenaSwapper.SetNetTexture();
             OnBlueJerseyChanged();

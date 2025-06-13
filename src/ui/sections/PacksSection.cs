@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using Steamworks;
+using UnityEngine;
 using UnityEngine.UIElements;
 
 namespace ToasterReskinLoader.ui.sections;
@@ -8,14 +9,62 @@ public static class PacksSection
     public static void CreateSection(VisualElement contentScrollViewContent)
     {
         ChangingRoomHelper.ShowBaseFocus();
-            
+        
+        
+        contentScrollViewContent.Clear(); // discard existing content
+        VisualElement sectionTitleGroup = new VisualElement();
+        VisualElement titleRow = new VisualElement();
+        // titleRow.style.alignItems = Align.Center;
+        titleRow.style.flexDirection = FlexDirection.Row;
+        titleRow.style.justifyContent = Justify.SpaceBetween;
+        sectionTitleGroup.style.flexDirection = FlexDirection.Column;
+        Label contentSectionTitle = new Label("Packs");
+        contentSectionTitle.style.fontSize = 30;
+        contentSectionTitle.style.color = Color.white;
+        sectionTitleGroup.Add(contentSectionTitle);
         Label packsNumberLabel =
             UITools.CreateConfigurationLabel($"{ReskinRegistry.reskinPacks.Count} pack{(ReskinRegistry.reskinPacks.Count == 1 ? "" : "s")} loaded");
         
         packsNumberLabel.style.marginBottom = 16;
-        contentScrollViewContent.Add(packsNumberLabel);
+        sectionTitleGroup.Add(packsNumberLabel);
+        
+        
+        Button findPacksButton = new Button
+        {
+            text = "<size=20>Find Reskin Packs</size>",
+            style =
+            {
+                backgroundColor = new StyleColor(new Color(0.25f, 0.25f, 0.25f)),
+                unityTextAlign = TextAnchor.MiddleCenter,
+                // width = new StyleLength(new Length(100, LengthUnit.Percent)),
+                // minWidth = new StyleLength(new Length(100, LengthUnit.Percent)),
+                // maxWidth = new StyleLength(new Length(100, LengthUnit.Percent)),
+                width = 300,
+                // width = referenceButton.style.width,
+                // minWidth = referenceButton.style.minWidth,
+                // maxWidth = referenceButton.style.maxWidth,
+                height = 40,
+                minHeight = 40,
+                maxHeight = 40,
+                marginTop = 16,
+                paddingTop = 8,
+                paddingBottom = 8,
+                paddingLeft = 15
+            }
+        };
+        UITools.AddHoverEffectsForButton(findPacksButton);
+        findPacksButton.RegisterCallback<ClickEvent>(FindPacksButtonClickHandler);
+        
+        void FindPacksButtonClickHandler(ClickEvent evt)
+        {
+            SteamFriends.ActivateGameOverlayToWebPage("https://steamcommunity.com/workshop/browse/?appid=2994020&requiredtags[]=Resource+Pack", EActivateGameOverlayToWebPageMode.k_EActivateGameOverlayToWebPageMode_Default);
+        }
+        titleRow.Add(sectionTitleGroup);
+        titleRow.Add(findPacksButton);
+        contentScrollViewContent.Add(titleRow);
         
         // https://steamcommunity.com/workshop/browse/?appid=2994020&requiredtags[]=Resource+Pack
+        
             
         // For each loaded pack,
         foreach (var pack in ReskinRegistry.reskinPacks)

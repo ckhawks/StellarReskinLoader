@@ -17,6 +17,64 @@ public static class StickSwapper
             BindingFlags.Instance | BindingFlags.NonPublic);
     
     // private static Dictionary<ulong, Texture> originalTextures = new Dictionary<ulong, Texture>();
+
+    // This is only used for the changing room stick because it will only be used to set reskins, not the original skins
+    public static void SetStickMeshTexture(StickMesh stickMesh, ReskinRegistry.ReskinEntry reskin, PlayerRole role) 
+    {
+        try
+        {
+            Plugin.LogDebug($"Trying to replace stick mesh texture");
+            if (stickMesh == null)
+            {
+                Plugin.LogError($"stickMesh is null!");
+                return;
+            }
+
+            MeshRenderer stickMeshRenderer = (MeshRenderer)_stickMeshRendererField.GetValue(stickMesh);
+            if (stickMeshRenderer == null)
+            {
+                Plugin.LogError($"stickMeshRenderer is null!");
+                return;
+            }
+            
+            // Plugin.Log($"file path: {textureFilePath}");
+            Texture2D texture2D = TextureManager.GetTexture(reskin);
+            if (texture2D == null)
+            {
+                Plugin.LogError($"texture2D is null!");
+                return;
+            }
+
+            // Debugging: Log material and shader
+            Plugin.LogDebug($"Material: {stickMeshRenderer.material.name}");
+            Plugin.LogDebug($"Shader: {stickMeshRenderer.material.shader.name}");
+
+            SerializedDictionary<string, Material> stickMaterialMap =
+                (SerializedDictionary<string, Material>)_stickMaterialMapField.GetValue(stickMesh);
+            
+            if (role == PlayerRole.Attacker)
+                stickMeshRenderer.material = stickMaterialMap["red_beta_attacker"];
+            if (role == PlayerRole.Goalie)
+                stickMeshRenderer.material = stickMaterialMap["red_beta_goalie"];
+            
+            stickMeshRenderer.material.SetTexture("_Texture", texture2D);
+            Plugin.LogDebug("Texture applied to property: _Texture");
+
+            // Ensure the renderer is enabled
+            if (!stickMeshRenderer.enabled)
+            {
+                Plugin.LogError("stickMeshRenderer is disabled. Enabling it.");
+                stickMeshRenderer.enabled = true;
+            }
+
+            Plugin.LogDebug("Texture applied to stick GameObject!");
+            return;
+        }
+        catch (Exception ex)
+        {
+            Plugin.LogError($"Error when setting stick mesh texture: {ex.Message}");
+        }
+    }
     
     public static void SetStickTexture(Stick stick, ReskinRegistry.ReskinEntry reskin)
     {
