@@ -194,6 +194,7 @@ public static class SwapperManager
         if (UnityEngine.SceneManagement.SceneManager.GetActiveScene().name != "changing_room")
         {
             IceSwapper.SetIceTexture();
+            IceSwapper.UpdateIceSmoothness();
             ArenaSwapper.UpdateCrowdState();
             ArenaSwapper.UpdateHangarState();
             ArenaSwapper.UpdateScoreboardState();

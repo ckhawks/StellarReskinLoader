@@ -1,9 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
+using HarmonyLib;
 using ToasterReskinLoader.swappers;
 using ToasterReskinLoader.ui.sections;
 using UnityEngine;
+using UnityEngine.InputSystem;
 using UnityEngine.UIElements;
 using Cursor = UnityEngine.Cursor;
 using Object = UnityEngine.Object;
@@ -456,6 +459,111 @@ public static class ReskinMenu
         newSectionButton.style.color = Color.black;
         // Plugin.Log($"");
     }
-
     
+    // Make it so that if Reskin menu is open, pressing Escape closes it
+    [HarmonyPatch(typeof(UIManagerInputs), "OnPauseActionPerformed")]
+    private static class UIManagerInputsOnPauseActionPerformedPatch
+    {
+        [HarmonyPrefix]
+        static bool Prefix(UIManagerInputs __instance, InputAction.CallbackContext context)
+        {
+            if (rootContainer == null) return true;
+
+            if (rootContainer.visible || rootContainer.enabledSelf || rootContainer.style.display == DisplayStyle.Flex)
+            {
+                Hide();
+
+                if (UIManager.Instance.UIState == UIState.Play)
+                {
+                    UIManager.Instance.PauseMenu.Toggle();
+                }
+                
+                return false;
+            }
+
+            return true;
+        }
+    }
+
+    // If the game phase changes, keep the mouse visible (make it visible again to counteract other things)
+    [HarmonyPatch(typeof(ScoreboardController), "Event_OnGamePhaseChanged")]
+    private static class ScoreboardControllerOnGamePhaseChangedPatch
+    {
+        [HarmonyPostfix]
+        static void Postfix(ScoreboardController __instance, Dictionary<string, object> message)
+        {
+            try
+            {
+                if (rootContainer == null) return;
+            
+                if (rootContainer.visible || rootContainer.enabledSelf || rootContainer.style.display == DisplayStyle.Flex)
+                {
+                    if (UIManager.Instance.UIState == UIState.Play)
+                    {
+                        UIManager.Instance.isMouseActive = true;
+                        Cursor.lockState = CursorLockMode.None;
+                        Cursor.visible = true;
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                Plugin.LogError($"Error while handling ScoreboardController OnGamePhaseChanged postfix: {e}");
+            }
+        }
+    }
+
+    [HarmonyPatch(typeof(UIAnnouncement), nameof(UIAnnouncement.Hide))]
+    private static class UIAnnouncementHidePatch
+    {
+        [HarmonyPostfix]
+        static void Postfix(UIAnnouncement __instance)
+        {
+            try
+            {
+                if (rootContainer == null) return;
+            
+                if (rootContainer.visible || rootContainer.enabledSelf || rootContainer.style.display == DisplayStyle.Flex)
+                {
+                    if (UIManager.Instance.UIState == UIState.Play)
+                    {
+                        UIManager.Instance.isMouseActive = true;
+                        Cursor.lockState = CursorLockMode.None;
+                        Cursor.visible = true;
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                Plugin.LogError($"Error while handling UIAnnouncementHidePatch postfix: {e}");
+            }
+        }
+    }
+    
+    [HarmonyPatch(typeof(UIAnnouncement), nameof(UIAnnouncement.Show))]
+    private static class UIAnnouncementShowPatch
+    {
+        [HarmonyPostfix]
+        static void Postfix(UIAnnouncement __instance)
+        {
+            try
+            {
+                if (rootContainer == null) return;
+            
+                if (rootContainer.visible || rootContainer.enabledSelf || rootContainer.style.display == DisplayStyle.Flex)
+                {
+                    if (UIManager.Instance.UIState == UIState.Play)
+                    {
+                        UIManager.Instance.isMouseActive = true;
+                        Cursor.lockState = CursorLockMode.None;
+                        Cursor.visible = true;
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                Plugin.LogError($"Error while handling UIAnnouncementShowPatch postfix: {e}");
+            }
+        }
+    }
 }

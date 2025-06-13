@@ -11,7 +11,7 @@ namespace ToasterReskinLoader;
 public class Plugin : IPuckMod
 {
     public static string MOD_NAME = "ToasterReskinLoader";
-    public static string MOD_VERSION = "0.2a";
+    public static string MOD_VERSION = "0.3a";
     public static string MOD_GUID = "pw.stellaric.toaster.reskinloader";
 
     static readonly Harmony harmony = new Harmony(MOD_GUID);
