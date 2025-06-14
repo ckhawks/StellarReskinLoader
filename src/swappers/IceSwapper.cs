@@ -51,7 +51,9 @@ public static class IceSwapper
             }
             else
             {
-                iceBottomMeshRenderer.material.SetTexture("_BaseMap", TextureManager.GetTexture(reskinEntry));
+                Texture2D texture2D = TextureManager.GetTexture(reskinEntry);
+                // TODO add mipmap stuff here
+                iceBottomMeshRenderer.material.SetTexture("_BaseMap", texture2D);
                 // Plugin.Log("Texture applied to property: _BaseMap");
             }
         

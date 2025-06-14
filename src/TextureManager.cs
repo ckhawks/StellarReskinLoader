@@ -71,10 +71,16 @@ public static class TextureManager
         {
             byte[] fileData = File.ReadAllBytes(filePath);
             // Create a non-readable texture for performance unless you need to access its pixels later.
-            Texture2D texture = new Texture2D(2, 2, TextureFormat.RGBA32, false);
+            Texture2D texture = new Texture2D(2, 2, TextureFormat.RGBA32, true);
             
             if (texture.LoadImage(fileData))
             {
+                // Set filter mode to take advantage of mipmaps
+                texture.filterMode = FilterMode.Trilinear;
+                
+                // Apply changes and generate mipmaps (true parameter generates mipmaps)
+                texture.Apply(true);
+                
                 return texture;
             }
             else
